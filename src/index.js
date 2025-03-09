@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { connect } from "./config/database.js";
 
 import apiRoutes from "./routes/index.js";
+import serverless from "serverless-http";
 
 dotenv.config();
 
@@ -16,8 +17,18 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/api", apiRoutes);
 
-app.listen(PORT, async () => {
-  console.log("server started on port", PORT);
-  await connect();
-  console.log("Mongo db connected");
-});
+if (process.env.NODE_ENV === "production") {
+  // Connect to MongoDB Atlas before handling requests
+  (async () => {
+    await connect();
+    console.log("MongoDB connected");
+  })();
+} else if (process.env.NODE_ENV === "development") {
+  app.listen(PORT, async () => {
+    console.log("server started on port", PORT);
+    await connect();
+    console.log("Mongo db connected");
+  });
+}
+
+export const handler = serverless(app);
